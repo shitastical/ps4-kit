@@ -62,6 +62,13 @@ every diagnostic has an off switch, the profilers start off.
   create-fself refuses it (TTT2: vprintf, putc, putchar, perror). Wraps of libc functions the app may
   not use are also linked with `--undefined=<name>`, which pulls the libc member in.
 
+## Bringing a port up
+
+`docs/bring-up-and-iteration.md`: why a port sits on a black screen (SDL's dummy video driver has to
+be selected by name), the pthread attribute failure that crashes `SDL_CreateMutex`, the boot-trace
+and watchdog instrumentation, and how to iterate on code without reinstalling the game's data
+(assets on `/data`, eboot-only packages).
+
 ## License
 
 MIT (`LICENSE`). The Mesa patches are under Mesa's own MIT license, and `runtime/third_party/dlmalloc`
