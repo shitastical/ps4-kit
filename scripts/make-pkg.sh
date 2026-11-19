@@ -16,6 +16,8 @@
 #   PKGTOOL     another PkgTool command line. By default LibOrbisPkg built with the PlayGo sizing fix
 #               (scripts/build-pkgtool.sh) when it is there: the toolchain's stops past ~4 GB with
 #               "Playgo Chunk hash file was not allocated enough space".
+#   CREATE_GP4   current OpenOrbis create-gp4. Some bundled binaries advertise -path but only
+#               implement -files; a current build handles recursive paths and spaces in names.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OPENORBIS="${OPENORBIS:-/opt/pacbrew/ps4/openorbis}"
@@ -23,6 +25,9 @@ PSB="${PSB:-$HOME/ps4kit-build}"
 
 STAGE="$(readlink -f "$1")"; TITLE_ID="$2"; TITLE="$3"; VERSION="$4"; LABEL="$5"; OUT="$(readlink -f "$6")"
 TOOLS="$OPENORBIS/bin/linux"
+CREATE_GP4="${CREATE_GP4:-$PSB/tools/create-gp4}"
+[ -x "$CREATE_GP4" ] || CREATE_GP4="$TOOLS/create-gp4"
+[ -x "$CREATE_GP4" ] || { echo "missing create-gp4 at $CREATE_GP4" >&2; exit 1; }
 export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 
 [[ "$TITLE_ID" =~ ^[A-Z]{4}[0-9]{5}$ ]] || { echo "TITLE_ID must look like ABCD12345" >&2; exit 1; }
@@ -105,7 +110,7 @@ set_entry TITLE_ID Utf8 12 "$TITLE_ID"
 set_entry VERSION Utf8 8 "$VERSION"
 
 rm -f "$STAGE/pkg.gp4"
-( cd "$STAGE" && "$TOOLS/create-gp4" -out pkg.gp4 --content-id="$CONTENT_ID" --path . ) >/dev/null
+( cd "$STAGE" && "$CREATE_GP4" -out pkg.gp4 -content-id="$CONTENT_ID" -path . ) >/dev/null
 python3 "$HERE/gp4-fix-dirs.py" "$STAGE/pkg.gp4" >&2  # folders create-gp4 drops (same name twice)
 mkdir -p "$OUT"
 ( cd "$STAGE" && "${PKGTOOL[@]}" pkg_build pkg.gp4 "$OUT" ) >/dev/null

@@ -159,9 +159,9 @@ function(ps4_kit_link_mesa target)
     list(TRANSFORM libs PREPEND "${PS4_MESA_BUILD}/")
     # ps4.cmake links with ld.lld directly: raw linker flags. Keyword signature, as most projects
     # link their app targets with PRIVATE and CMake forbids mixing the two.
-    target_link_libraries(${target} PRIVATE --whole-archive ${libs} --no-whole-archive)
+    target_link_libraries(${target} --whole-archive ${libs} --no-whole-archive)
     # The presenter's VideoOut and splash screen; zlib for Mesa's shader cache.
-    target_link_libraries(${target} PRIVATE ${PS4_SYSROOT}/lib/libz.a -lSceVideoOut -lSceSystemService)
+    target_link_libraries(${target} ${PS4_SYSROOT}/lib/libz.a -lSceVideoOut -lSceSystemService)
 endfunction()
 
 # --- eboot.bin ---------------------------------------------------------------------------------
@@ -187,7 +187,7 @@ endfunction()
 
 # The whole app: the runtime's objects, its app-only wraps, eboot.bin.
 function(ps4_kit_app target)
-    target_link_libraries(${target} PRIVATE ps4kit_runtime)
+    target_link_libraries(${target} ps4kit_runtime)
     foreach (fn ${PS4_KIT_APP_WRAPS})
         target_link_options(${target} PRIVATE --wrap=${fn})
     endforeach ()
@@ -197,8 +197,8 @@ function(ps4_kit_app target)
     # The PS4 resolver and module loader (ps4_net.cpp, ps4_modules.cpp); netfs's protocol libraries
     # from the sysroot.
     if (PS4_KIT_NETFS)
-        target_link_libraries(${target} PRIVATE ${PS4_SYSROOT}/lib/libsmb2.a ${PS4_SYSROOT}/lib/libnfs.a)
+        target_link_libraries(${target} ${PS4_SYSROOT}/lib/libsmb2.a ${PS4_SYSROOT}/lib/libnfs.a)
     endif ()
-    target_link_libraries(${target} PRIVATE -lSceNet -lSceSysmodule -lSceSystemService)
+    target_link_libraries(${target} -lSceNet -lSceSysmodule -lSceSystemService)
     ps4_kit_add_eboot(${target})
 endfunction()
