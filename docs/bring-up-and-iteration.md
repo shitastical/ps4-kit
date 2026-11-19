@@ -23,6 +23,12 @@ repeating ~540,000 times in 69 seconds. Irrlicht's `IrrDriver` recreates the dev
   log rolls over and hides the first, useful lines.
 - The loop also degrades over time: after ~500k retries the error became "Couldn't initialize pthread
   attributes" — an exhausted resource, not a second root cause. Fix the first failure.
+- A retry loop can hide behind the first one. After the dummy hint was fixed, STK's trace became
+  `SDL_InitSubSystem(0x21) -> 0` / `SDL_CreateWindow -> 0` repeating (about 292,000 calls in 54 s;
+  `0` is a NULL window), then the pthread attribute pool ran out and the process crashed in
+  libkernel. A successful init is not a created window: log `SDL_GetError()` after **every** call
+  in the retry, not only the first init. STK's wrapper recorded the NULL but not the error string,
+  so that window failure is still unexplained.
 
 ## 2. SDL's dummy video driver is not a fallback: ask for it by name
 
@@ -91,42 +97,25 @@ What works, in the port:
 
 ## 5. Iterating without reinstalling the game image
 
-What the console actually allows (verified):
-
-- `/app0` is the **installed package image**. `/user/app/<TITLE_ID>/` (FTP-writable) holds only
-  `app.pkg`, `app.json`, `app.xml`, `app.pbm` — there is no loose `eboot.bin` to replace.
-- Installing a package replaces `app.pkg`; with assets inside it, every code change costs a full
-  install (STK: 1.16 GB) of SSD writes.
-- `/data` is writable over FTP and survives installs.
+The console installs a fake package as one image (`/user/app/<TITLE_ID>/app.pkg`); there is no loose
+`eboot.bin`, the installer refuses a package whose content ID is already installed (even with a
+higher `APP_VER`), and replacing `app.pkg` over FTP fails at launch with "data is corrupted".
 
 So: **code in the package, stable data on `/data`.**
 
-1. Put the data on `/data` once, over FTP. For STK the asset tree (code `data/` + `stk-assets/`,
-   6890 files, 834 MiB) is mirrored to `/data/stk/data` by `ps4/upload-data.py`.
-   Decide the precedence when both trees hold the same relative path with different content
-   (`stk_config.xml` is one). The package stages `data/` and then merges `stk-assets/` over it, so
-   the assets copy is what the game sees; the uploader deduplicates the same way (5590 unique paths).
-   Without that, the two copies overwrite each other and the mirror never converges.
-2. Point the game at it at runtime. STK's `FileManager` reads `SUPERTUXKART_DATADIR` before its
-   compile-time default, so the port's constructor does `setenv("SUPERTUXKART_DATADIR",
-   "/data/stk", 1)`. No rebuild.
-3. Package only the executable: `STK_PKG_EBOOT_ONLY=1` skips staging the data trees. STK's package
-   went from 1,160,773,632 to 60,686,336 bytes (~19x fewer SSD writes, seconds to install instead of
-   minutes).
-4. **Replacing `app.pkg` over FTP does not work** (tried on STK): the console validates the
-   installed image, and a swapped image makes the app fail at launch with "data is corrupted".
-   `app.json`'s `packageDigest` is not the file's SHA-256, so the metadata cannot be repaired by
-   hand. The working loop is uninstall + install of the eboot-only package: ~19x fewer writes than
-   the 1.16 GB image, at the cost of two XMB steps per iteration. Rotating the `TITLE_ID` per build
-   installs each build as a separate small app instead, with no uninstall step to forget.
+1. Mirror the asset tree to `/data` once over FTP, deduplicating the way packaging merges its two
+   source trees (`data/` first, `stk-assets/` over it) so the mirror converges; STK's 5,590 unique
+   files total 761 MiB at `/data/stk/data`.
+2. Point the game at it from a constructor (`SUPERTUXKART_DATADIR=/data/stk`). A runtime `setenv`
+   costs nothing; changing a compile definition costs a full rebuild.
+3. Package the executable only (`STK_PKG_EBOOT_ONLY=1`): STK's package goes from 1,160,773,632 to
+   60,686,336 bytes, 19.1x fewer bytes per iteration.
+4. Iterate by uninstall + install of that package (two XMB steps), or rotate `TITLE_ID` per build
+   (each build installs beside the old one; not tried here).
 
-**The executable is the floor.** A statically linked port is a single ~59 MB ELF, so 60 MB per
-iteration is already ~19x less than the 1.16 GB image; there are no smaller code files to replace.
-Only data splits into files, which is what `/data/stk/data` does: shaders, GUI and track data are
-written once and survive code swaps. Stripping the eboot takes it from 65.8 MB to 56.6 MB
-(`strip --strip-unneeded`) if another ~9 MB per iteration ever matters.
-
-Rule of thumb: stable data on `/data`; code is one file, so replace that one file.
+A statically linked executable is one file, so 60 MB is the floor for code; only data splits. Full
+procedure, commands, cost model and the measured failures:
+[`ssd-friendly-iteration.md`](ssd-friendly-iteration.md).
 
 **Do not move a data path by editing a global compile definition.** Changing
 `add_definitions`/`target_compile_definitions` invalidates every object file and turns a ~30 s
@@ -169,7 +158,8 @@ free.
    on knowing how far the process gets.
 2. Init fails? Log the return value **and** the library's error string; rate-limit retries.
 3. SDL video failing on a Vulkan port? Set `SDL_HINT_VIDEODRIVER=dummy` + `SDL_VIDEODRIVER=dummy`
-   before `SDL_Init`, then confirm `SDL_GetCurrentVideoDriver()` says "dummy".
+   before `SDL_Init`, then confirm `SDL_GetCurrentVideoDriver()` says "dummy" **and** that
+   `SDL_CreateWindow` returns non-NULL; log `SDL_GetError()` when it does not.
 4. Crash inside `SDL_CreateMutex`/libkernel? Check the pthread attribute wrappers (§3) before
    suspecting the heap.
 5. Assets in the package? Move them to `/data`, override the data root at runtime, and build an

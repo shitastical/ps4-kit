@@ -66,8 +66,11 @@ every diagnostic has an off switch, the profilers start off.
 
 `docs/bring-up-and-iteration.md`: why a port sits on a black screen (SDL's dummy video driver has to
 be selected by name), the pthread attribute failure that crashes `SDL_CreateMutex`, the boot-trace
-and watchdog instrumentation, and how to iterate on code without reinstalling the game's data
-(assets on `/data`, eboot-only packages).
+and watchdog instrumentation, and the retry loops that hide behind the first failure.
+
+`docs/ssd-friendly-iteration.md`: the measured, repeatable loop for changing code without rewriting
+the game image — assets on `/data`, an eboot-only package, and the console's content-ID install
+rules (including what does not work: version bumps and hand-swapped `app.pkg`).
 
 ## License
 
