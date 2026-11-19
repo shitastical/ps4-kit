@@ -103,6 +103,10 @@ So: **code in the package, stable data on `/data`.**
 
 1. Put the data on `/data` once, over FTP. For STK the asset tree (code `data/` + `stk-assets/`,
    6890 files, 834 MiB) is mirrored to `/data/stk/data` by `ps4/upload-data.py`.
+   Decide the precedence when both trees hold the same relative path with different content
+   (`stk_config.xml` is one). The package stages `data/` and then merges `stk-assets/` over it, so
+   the assets copy is what the game sees; the uploader deduplicates the same way (5590 unique paths).
+   Without that, the two copies overwrite each other and the mirror never converges.
 2. Point the game at it at runtime. STK's `FileManager` reads `SUPERTUXKART_DATADIR` before its
    compile-time default, so the port's constructor does `setenv("SUPERTUXKART_DATADIR",
    "/data/stk", 1)`. No rebuild.
@@ -123,8 +127,9 @@ free.
 
 ## 6. FTP and console workflow
 
-- FTP: port **2121**, user `anonymous` / any password, root is `/`, ~85 MB/s on LAN; `SITE DF` is
-  unsupported, `MLSD`, `SIZE` and `MKD` work.
+- FTP: port **2121**, user `anonymous` / any password, root is `/`; `SITE DF` is unsupported,
+  `MLSD`, `SIZE` and `MKD` work. One big file moves at ~85 MB/s, but thousands of small files run at
+  ~3-4 MiB/s because each STOR pays a handshake: plan a few minutes for a full asset mirror.
 - Upload: `curl -sS -T file ftp://<host>:2121/data/pkg/<name> --user anonymous:anonymous`.
 - The app directory is writable but useless for code (see above); don't try to hot-swap the eboot.
 - Logs live in `/data/ps4-kit/`: `boot-trace.log`, `crash.log`, `hang.log`.
