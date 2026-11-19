@@ -113,13 +113,12 @@ So: **code in the package, stable data on `/data`.**
 3. Package only the executable: `STK_PKG_EBOOT_ONLY=1` skips staging the data trees. STK's package
    went from 1,160,773,632 to 60,686,336 bytes (~19x fewer SSD writes, seconds to install instead of
    minutes).
-4. `ps4/deploy.sh` builds the eboot-only package and uploads it to `/data/pkg`. Installing it is
-   still refused while a package with the same content ID is installed, even with a higher
-   `APP_VER`. So iterate by replacing the installed image directly:
-   `python3 ps4/push.py --installed` saves `/user/app/<TITLE_ID>/app.pkg` once to
-   `out/app.pkg.backup`, then overwrites it (and the `/data/pkg` piece) over FTP. No installer and
-   no second copy on the console: ~60 MB written per code change, and `--restore` puts the backup
-   back if the swapped image will not start.
+4. **Replacing `app.pkg` over FTP does not work** (tried on STK): the console validates the
+   installed image, and a swapped image makes the app fail at launch with "data is corrupted".
+   `app.json`'s `packageDigest` is not the file's SHA-256, so the metadata cannot be repaired by
+   hand. The working loop is uninstall + install of the eboot-only package: ~19x fewer writes than
+   the 1.16 GB image, at the cost of two XMB steps per iteration. Rotating the `TITLE_ID` per build
+   installs each build as a separate small app instead, with no uninstall step to forget.
 
 **The executable is the floor.** A statically linked port is a single ~59 MB ELF, so 60 MB per
 iteration is already ~19x less than the 1.16 GB image; there are no smaller code files to replace.
@@ -143,8 +142,9 @@ free.
 - The installed app is `/user/app/<TITLE_ID>/app.pkg` plus `app.json` / `app.pbm`; there is no
   loose `eboot.bin`. The Package Installer refuses any package whose content ID is already
   installed, even with a higher `APP_VER` (a 00.02 build was refused), so version bumps do not buy
-  a reinstall. Replace `app.pkg` itself over FTP instead (`ps4/push.py --installed`), or uninstall
-  once and install the eboot-only package.
+  a reinstall. Replacing `app.pkg` by hand fails too: the console validates the image and reports
+  "data is corrupted" at launch. Use uninstall + install of the eboot-only package, or a new
+  `TITLE_ID` per build.
 - `app.json`'s `packageDigest` is **not** the SHA-256 of the installed `app.pkg` (checked:
   `070E9B…` vs `84F401…`), so there is nothing to update when swapping the image; the fake-package
   patch is what lets the replaced image run.
