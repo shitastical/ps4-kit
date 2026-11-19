@@ -113,12 +113,21 @@ So: **code in the package, stable data on `/data`.**
 3. Package only the executable: `STK_PKG_EBOOT_ONLY=1` skips staging the data trees. STK's package
    went from 1,160,773,632 to 60,686,336 bytes (~19x fewer SSD writes, seconds to install instead of
    minutes).
-4. One command per iteration (`ps4/deploy.sh`): build → eboot-only package → FTP upload to
-   `/data/pkg`. The developer still installs and launches from the console (no remote launch: the
-   Remote Package Installer/BinLoader ports are closed).
+4. `ps4/deploy.sh` builds the eboot-only package and uploads it to `/data/pkg`. Installing it is
+   still refused while a package with the same content ID is installed, even with a higher
+   `APP_VER`. So iterate by replacing the installed image directly:
+   `python3 ps4/push.py --installed` saves `/user/app/<TITLE_ID>/app.pkg` once to
+   `out/app.pkg.backup`, then overwrites it (and the `/data/pkg` piece) over FTP. No installer and
+   no second copy on the console: ~60 MB written per code change, and `--restore` puts the backup
+   back if the swapped image will not start.
 
-Rule of thumb: anything that changes every iteration goes in the package; anything stable goes on
-`/data`. Shaders and GUI data are stable enough for `/data` and save most of the bytes.
+**The executable is the floor.** A statically linked port is a single ~59 MB ELF, so 60 MB per
+iteration is already ~19x less than the 1.16 GB image; there are no smaller code files to replace.
+Only data splits into files, which is what `/data/stk/data` does: shaders, GUI and track data are
+written once and survive code swaps. Stripping the eboot takes it from 65.8 MB to 56.6 MB
+(`strip --strip-unneeded`) if another ~9 MB per iteration ever matters.
+
+Rule of thumb: stable data on `/data`; code is one file, so replace that one file.
 
 **Do not move a data path by editing a global compile definition.** Changing
 `add_definitions`/`target_compile_definitions` invalidates every object file and turns a ~30 s
@@ -132,10 +141,13 @@ free.
   ~3-4 MiB/s because each STOR pays a handshake: plan a few minutes for a full asset mirror.
 - Upload: `curl -sS -T file ftp://<host>:2121/data/pkg/<name> --user anonymous:anonymous`.
 - The installed app is `/user/app/<TITLE_ID>/app.pkg` plus `app.json` / `app.pbm`; there is no
-  loose `eboot.bin`, so the code cannot be hot-swapped over FTP. Reinstalling the same content ID
-  *and* version fails with "package already installed". Ship a higher `APP_VER` instead: the same
-  content ID with a newer version installs as an update (~60 MB) without uninstalling, and the save
-  data is untouched. `ps4/deploy.sh` keeps a counter in `out/.stk-version` and bumps it every run.
+  loose `eboot.bin`. The Package Installer refuses any package whose content ID is already
+  installed, even with a higher `APP_VER` (a 00.02 build was refused), so version bumps do not buy
+  a reinstall. Replace `app.pkg` itself over FTP instead (`ps4/push.py --installed`), or uninstall
+  once and install the eboot-only package.
+- `app.json`'s `packageDigest` is **not** the SHA-256 of the installed `app.pkg` (checked:
+  `070E9B…` vs `84F401…`), so there is nothing to update when swapping the image; the fake-package
+  patch is what lets the replaced image run.
 - Logs live in `/data/ps4-kit/`: `boot-trace.log`, `crash.log`, `hang.log`.
 - An FTP upload tool needs a socket timeout, retries with reconnect, and size-based resume. Without
   them a single stalled data connection blocks forever and looks like "the command hangs" (it did).
