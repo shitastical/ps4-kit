@@ -1,7 +1,7 @@
-From 473f05f9364dd7c462e52687def4bba6a09c54be Mon Sep 17 00:00:00 2001
+From 07f42b15f46d72ac4cb782840c6c5bf3cc8cbeb5 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 22:32:46 +0300
-Subject: [PATCH 11/32] PS4: no predicated fast-clear-eliminate passes
+Subject: [PATCH 11/34] PS4: no predicated fast-clear-eliminate passes
 
 ---
  src/amd/common/ac_ps4_drm.c                | 101 +++++++++++++++++++--
@@ -9,7 +9,7 @@ Subject: [PATCH 11/32] PS4: no predicated fast-clear-eliminate passes
  2 files changed, 97 insertions(+), 7 deletions(-)
 
 diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
-index 89d649c..10a9e4c 100755
+index 89d649c381f..10a9e4c56e8 100755
 --- a/src/amd/common/ac_ps4_drm.c
 +++ b/src/amd/common/ac_ps4_drm.c
 @@ -87,6 +87,7 @@ struct amdgpu_bo {
@@ -195,7 +195,7 @@ index 89d649c..10a9e4c 100755
        return ps4_reserve(addr, size) ? 0 : -EINVAL;
     }
 diff --git a/src/amd/vulkan/meta/radv_meta_fast_clear.c b/src/amd/vulkan/meta/radv_meta_fast_clear.c
-index f5b0837..45768c3 100644
+index f5b0837735d..45768c32e7e 100644
 --- a/src/amd/vulkan/meta/radv_meta_fast_clear.c
 +++ b/src/amd/vulkan/meta/radv_meta_fast_clear.c
 @@ -375,6 +375,9 @@ radv_process_color_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *
@@ -209,5 +209,5 @@ index f5b0837..45768c3 100644
  
     if (pred_offset) {
 -- 
-2.53.0
+2.43.0
 

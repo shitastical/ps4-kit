@@ -1,0 +1,47 @@
+From 1ed8b23db383e09ac947555b6262098ed0cbfcc8 Mon Sep 17 00:00:00 2001
+From: ps4-kit <ps4-kit@localhost>
+Date: Thu, 19 Nov 2026 17:20:14 -0500
+Subject: [PATCH 33/34] PS4: submitDone only after a flip, never on a timer
+ while work is queued (the kernel's 500 ms idle deadline turned texture
+ loading into GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC)
+
+---
+ src/amd/common/ac_ps4_drm.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
+index 18ce9a67992..d131b301789 100644
+--- a/src/amd/common/ac_ps4_drm.c
++++ b/src/amd/common/ac_ps4_drm.c
+@@ -2593,7 +2593,6 @@ ps4_submit_thread(void *arg)
+ {
+    (void)arg;
+    ps4_boost_thread();
+-   int64_t last_done = 0;
+    for (;;) {
+       pthread_mutex_lock(&ps4_job_lock);
+       while (ps4_job_head == ps4_job_tail)
+@@ -2610,13 +2609,14 @@ ps4_submit_thread(void *arg)
+                                   job->buffer, job->mode, job->arg);
+       else
+          r = dev->submit(job->num_ibs, job->dcb, job->dcb_sizes, ccb, ccb_sizes);
+-      /* sceGnmSubmitDone tells the system the frame's work is in (it wants one at least every
+-       * frame): after every flip, else at most every 4 ms */
+-      const int64_t now = os_time_get_nano();
+-      if (job->flip || now - last_done >= 4000000) {
++      /* sceGnmSubmitDone tells the system the frame's work is in, and the kernel then expects the
++       * GPU to fall idle within 500 ms ("GPU failed to become idle within 500 ms after submitDone",
++       * and after enough of those GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC). A texture upload
++       * queue keeps the GPU busy far longer than that, so the old "at least every 4 ms" fallback
++       * turned a loading screen into a GPU fault, a frozen app and a console whose shell had to
++       * restart. Only a flip ends a frame: one submitDone after it, none while work is queued. */
++      if (job->flip)
+          dev->submit_done();
+-         last_done = now;
+-      }
+       if (r) {
+          static unsigned logged;
+          if (logged++ < 8)
+-- 
+2.43.0
+

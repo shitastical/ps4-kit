@@ -1,7 +1,7 @@
-From 5eb263371b378b5dbc4dd9704f52f1483591771a Mon Sep 17 00:00:00 2001
+From 17da716ca36387e1d7b557c723e2508796657b22 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Wed, 21 Oct 2026 08:02:12 +0300
-Subject: [PATCH 22/32] SSBU: address32_hi and the vertex fetch rule in the
+Subject: [PATCH 22/34] SSBU: address32_hi and the vertex fetch rule in the
  shader cache's identity
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 22/32] SSBU: address32_hi and the vertex fetch rule in the
  1 file changed, 12 insertions(+)
 
 diff --git a/src/amd/vulkan/radv_physical_device.c b/src/amd/vulkan/radv_physical_device.c
-index 411bd7f..852e25d 100644
+index 411bd7ffdf2..852e25de1e0 100644
 --- a/src/amd/vulkan/radv_physical_device.c
 +++ b/src/amd/vulkan/radv_physical_device.c
 @@ -334,6 +334,18 @@ radv_device_get_cache_uuid(struct radv_physical_device *pdev, void *uuid)
@@ -32,5 +32,5 @@ index 411bd7f..852e25d 100644
  
     memcpy(uuid, sha1, VK_UUID_SIZE);
 -- 
-2.53.0
+2.43.0
 

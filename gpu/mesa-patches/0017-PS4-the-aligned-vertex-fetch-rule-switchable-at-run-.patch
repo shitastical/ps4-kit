@@ -1,7 +1,7 @@
-From 8c9b4fb509fbae0542a54022a435f7ac4cfb4578 Mon Sep 17 00:00:00 2001
+From ba24807952c68d0b6a37b90f16d059abf9c9c30d Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Sat, 17 Oct 2026 18:53:32 +0300
-Subject: [PATCH 17/32] PS4: the aligned vertex fetch rule switchable at run
+Subject: [PATCH 17/34] PS4: the aligned vertex fetch rule switchable at run
  time (ac_ps4_unaligned_vertex_fetch, Crema setting Vertex Fetch)
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 17/32] PS4: the aligned vertex fetch rule switchable at run
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/src/amd/common/ac_shader_util.c b/src/amd/common/ac_shader_util.c
-index 322449a..b4b08d3 100644
+index 322449a8d9c..b4b08d33213 100644
 --- a/src/amd/common/ac_shader_util.c
 +++ b/src/amd/common/ac_shader_util.c
 @@ -506,6 +506,11 @@ ac_get_vtx_format_info(enum amd_gfx_level level, bool has_alpha_adjust_bug, enum
@@ -34,5 +34,5 @@ index 322449a..b4b08d3 100644
     const bool unaligned_ok = gfx_level >= GFX7 && gfx_level <= GFX9;
  #endif
 -- 
-2.53.0
+2.43.0
 

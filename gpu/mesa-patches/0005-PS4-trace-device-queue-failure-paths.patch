@@ -1,7 +1,7 @@
-From baad0f772f5303a6741c4769b93dc0809c2f93be Mon Sep 17 00:00:00 2001
+From 1f8fe01f36963c573c03ba725245718da6d9b903 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 17:05:25 +0300
-Subject: [PATCH 05/32] PS4: trace device/queue failure paths
+Subject: [PATCH 05/34] PS4: trace device/queue failure paths
 
 ---
  src/amd/common/ac_ps4_drm.c  |  5 ++-
@@ -10,7 +10,7 @@ Subject: [PATCH 05/32] PS4: trace device/queue failure paths
  3 files changed, 72 insertions(+), 55 deletions(-)
 
 diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
-index b55b776..231af39 100755
+index b55b7767357..231af394e4e 100755
 --- a/src/amd/common/ac_ps4_drm.c
 +++ b/src/amd/common/ac_ps4_drm.c
 @@ -268,7 +268,10 @@ ac_drm_device_initialize(int fd, bool is_virtio, uint32_t *major_version, uint32
@@ -26,7 +26,7 @@ index b55b776..231af39 100755
        goto fail;
     ps4_log("radv/ps4: GPU address windows %#llx (16 GiB), %#llx (32-bit)\n",
 diff --git a/src/amd/vulkan/radv_device.c b/src/amd/vulkan/radv_device.c
-index 2323aba..4113b96 100644
+index 2323abade8b..4113b96fb91 100644
 --- a/src/amd/vulkan/radv_device.c
 +++ b/src/amd/vulkan/radv_device.c
 @@ -68,6 +68,13 @@ typedef void *drmDevicePtr;
@@ -200,7 +200,7 @@ index 2323aba..4113b96 100644
  
     if (device->vk.enabled_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
 diff --git a/src/amd/vulkan/radv_queue.c b/src/amd/vulkan/radv_queue.c
-index 564a8d8..671d481 100644
+index 564a8d890e2..671d4819292 100644
 --- a/src/amd/vulkan/radv_queue.c
 +++ b/src/amd/vulkan/radv_queue.c
 @@ -34,6 +34,13 @@ radv_get_queue_global_priority(const VkDeviceQueueGlobalPriorityCreateInfo *pObj
@@ -492,5 +492,5 @@ index 564a8d8..671d481 100644
  
     if (queue->state.qf == RADV_QUEUE_SPARSE) {
 -- 
-2.53.0
+2.43.0
 

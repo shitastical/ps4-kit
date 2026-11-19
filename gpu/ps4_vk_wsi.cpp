@@ -18,6 +18,8 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
+extern "C" int sceVideoOutClose(int handle);  // exported by libSceVideoOut, not in every SDK header
+
 #include <orbis/SystemService.h>
 #include <orbis/VideoOut.h>
 #include <orbis/libkernel.h>
@@ -1205,7 +1207,29 @@ void set_stats_log(bool on) { g_stats_log = on; }
 
 void set_force_vsync(bool on) { g_force_vsync = on; }
 
+// Gives the screen back on the way out. A process that dies with its VideoOut buffers still
+// registered can leave the display black until SceShellUI restarts; ps4_kit_exit calls this
+// before it asks the shell to close the app.
+void shutdown_video() {
+    std::lock_guard lk(g_lock);
+    if (g_video < 0) return;
+    for (Swapchain* sc : g_retired) {
+        if (sc->buffer_set >= 0 && sceVideoOutUnregisterBuffers(g_video, sc->buffer_set) >= 0)
+            sc->buffer_set = -1;
+    }
+    int r = -1;
+    for (int tries = 0; tries < 20 && r < 0; tries++) {
+        r = sceVideoOutClose(g_video);
+        if (r < 0) sceKernelUsleep(5000);
+    }
+    log("ps4kit/wsi: VideoOut closed on the way out (%x)", unsigned(r));
+    g_video = -1;
+}
+
 }  // namespace ps4kit
+
+// The runtime (ps4_kit_exit) calls this weakly, before the shell ends the process.
+extern "C" void ps4kit_video_shutdown(void) { ps4kit::shutdown_video(); }
 
 extern "C" void* ps4kit_vk_get_instance_proc_addr(void) { return ps4kit::vk_get_instance_proc_addr(); }
 

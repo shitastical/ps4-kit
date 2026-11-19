@@ -1,7 +1,7 @@
-From decf02eb23f96c852505fc3416c2efaf34d3a044 Mon Sep 17 00:00:00 2001
+From c52031b7db24242d65f66843d32cb1fc939e9eb3 Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Mon, 16 Nov 2026 23:56:36 +0300
-Subject: [PATCH 32/32] PS4: a pipeline switch binds and emits only the shader
+Subject: [PATCH 32/34] PS4: a pipeline switch binds and emits only the shader
  stages that change (per switch on the PC host build: same shaders 0.115 ->
  0.068 us, other fragment shader 0.155 -> 0.120 us)
 
@@ -28,7 +28,7 @@ pipelines with the same shaders, +2.54 us with another fragment shader.
  1 file changed, 110 insertions(+), 14 deletions(-)
 
 diff --git a/src/amd/vulkan/radv_cmd_buffer.c b/src/amd/vulkan/radv_cmd_buffer.c
-index 39b2f11..04271d1 100644
+index 39b2f11cd62..04271d1134c 100644
 --- a/src/amd/vulkan/radv_cmd_buffer.c
 +++ b/src/amd/vulkan/radv_cmd_buffer.c
 @@ -3865,13 +3865,48 @@ gfx103_emit_vrs_state(struct radv_cmd_buffer *cmd_buffer)
@@ -246,5 +246,5 @@ index 39b2f11..04271d1 100644
     }
  
 -- 
-2.53.0
+2.43.0
 

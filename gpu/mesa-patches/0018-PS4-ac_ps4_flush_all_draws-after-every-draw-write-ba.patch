@@ -1,7 +1,7 @@
-From 61eec2ae15b0da9e01989bb5fe4de49e12cbbd9c Mon Sep 17 00:00:00 2001
+From 260054a7dac6bf04e3596673537bcd673d81b957 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Sat, 17 Oct 2026 19:12:15 +0300
-Subject: [PATCH 18/32] PS4: ac_ps4_flush_all_draws - after every draw write
+Subject: [PATCH 18/34] PS4: ac_ps4_flush_all_draws - after every draw write
  back and invalidate every GPU cache (Crema GPU Driver Checks: Flush Caches)
 
 ---
@@ -10,7 +10,7 @@ Subject: [PATCH 18/32] PS4: ac_ps4_flush_all_draws - after every draw write
  2 files changed, 1846 insertions(+), 49 deletions(-)
 
 diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
-index 10a9e4c..234d846 100755
+index 10a9e4c56e8..234d846ea25 100755
 --- a/src/amd/common/ac_ps4_drm.c
 +++ b/src/amd/common/ac_ps4_drm.c
 @@ -22,13 +22,16 @@
@@ -2261,7 +2261,7 @@ index 10a9e4c..234d846 100755
  
  static int
 diff --git a/src/amd/vulkan/radv_cmd_buffer.c b/src/amd/vulkan/radv_cmd_buffer.c
-index ce2e9f5..f49b802 100644
+index ce2e9f5cd5f..f49b802de7c 100644
 --- a/src/amd/vulkan/radv_cmd_buffer.c
 +++ b/src/amd/vulkan/radv_cmd_buffer.c
 @@ -1675,6 +1675,10 @@ radv_emit_thread_trace_marker(struct radv_device *device, struct radv_cmd_stream
@@ -2296,5 +2296,5 @@ index ce2e9f5..f49b802 100644
        assert(flags & (RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_CS_PARTIAL_FLUSH));
  
 -- 
-2.53.0
+2.43.0
 

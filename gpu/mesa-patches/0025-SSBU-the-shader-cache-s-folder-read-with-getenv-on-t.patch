@@ -1,7 +1,7 @@
-From feaedcae6bc4f3ae42eb171b97286dec8a3abcb4 Mon Sep 17 00:00:00 2001
+From 9db0ca90cfa705a8285d2267d51a04db85966299 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Wed, 21 Oct 2026 18:28:14 +0300
-Subject: [PATCH 25/32] SSBU: the shader cache's folder read with getenv on the
+Subject: [PATCH 25/34] SSBU: the shader cache's folder read with getenv on the
  PS4 (OpenOrbis's secure_getenv returns nothing), its files used without flock
  where the file system has none, its start in the log
 
@@ -12,7 +12,7 @@ Subject: [PATCH 25/32] SSBU: the shader cache's folder read with getenv on the
  3 files changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/src/util/disk_cache.c b/src/util/disk_cache.c
-index b58427c..6c26acc 100644
+index b58427ca0a4..6c26acc572e 100644
 --- a/src/util/disk_cache.c
 +++ b/src/util/disk_cache.c
 @@ -169,6 +169,11 @@ disk_cache_type_create(const char *gpu_name,
@@ -28,7 +28,7 @@ index b58427c..6c26acc 100644
     cache->driver_keys_blob_size = cv_size;
  
 diff --git a/src/util/fossilize_db.c b/src/util/fossilize_db.c
-index 1ae5e59..0072273 100644
+index 1ae5e5932f4..0072273d5e1 100644
 --- a/src/util/fossilize_db.c
 +++ b/src/util/fossilize_db.c
 @@ -205,6 +205,12 @@ static int lock_file_with_timeout(FILE *f, int64_t timeout)
@@ -45,7 +45,7 @@ index 1ae5e59..0072273 100644
  }
  
 diff --git a/src/util/os_misc.c b/src/util/os_misc.c
-index ee2b790..367e7e9 100644
+index ee2b790be39..367e7e979de 100644
 --- a/src/util/os_misc.c
 +++ b/src/util/os_misc.c
 @@ -225,7 +225,9 @@ os_get_option_internal(const char *name, bool use_secure_getenv)
@@ -60,5 +60,5 @@ index ee2b790..367e7e9 100644
  #else
        opt = getenv(name);
 -- 
-2.53.0
+2.43.0
 

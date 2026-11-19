@@ -1,7 +1,7 @@
-From 30be9db3b1b8d95144f207a71e0ad9d6d36b9746 Mon Sep 17 00:00:00 2001
+From d8abdb7c2534f474db7f721108ff3e4a80b1bad6 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 17:55:00 +0300
-Subject: [PATCH 07/32] PS4: map buffers through ac_drm_bo_cpu_map, never
+Subject: [PATCH 07/34] PS4: map buffers through ac_drm_bo_cpu_map, never
  munmap
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 07/32] PS4: map buffers through ac_drm_bo_cpu_map, never
  1 file changed, 17 insertions(+)
 
 diff --git a/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_bo.c b/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_bo.c
-index fb84e4b..b8c79c9 100644
+index fb84e4bab9a..b8c79c92941 100644
 --- a/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_bo.c
 +++ b/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_bo.c
 @@ -474,8 +474,10 @@ radv_amdgpu_winsys_bo_destroy(struct radeon_winsys *_ws, struct radeon_winsys_bo
@@ -53,5 +53,5 @@ index fb84e4b..b8c79c9 100644
        (void)mmap(bo->cpu_map, bo->base.size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
     } else {
 -- 
-2.53.0
+2.43.0
 

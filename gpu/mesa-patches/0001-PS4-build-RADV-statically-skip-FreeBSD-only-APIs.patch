@@ -1,7 +1,7 @@
-From 7aa60dcaa9872f9c715541562b5141d9dc959b44 Mon Sep 17 00:00:00 2001
+From 1f4594658223768ea56940dc769ebd42a98a3b14 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 13:04:36 +0300
-Subject: [PATCH 01/32] PS4: build RADV statically, skip FreeBSD-only APIs
+Subject: [PATCH 01/34] PS4: build RADV statically, skip FreeBSD-only APIs
 
 ---
  meson.build                |  3 ++
@@ -15,7 +15,7 @@ Subject: [PATCH 01/32] PS4: build RADV statically, skip FreeBSD-only APIs
  8 files changed, 60 insertions(+), 32 deletions(-)
 
 diff --git a/meson.build b/meson.build
-index 7d4dca7..3795b7a 100644
+index 7d4dca73627..3795b7aae04 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -1525,6 +1525,9 @@ if cc.has_header_symbol('time.h', 'struct timespec')
@@ -29,7 +29,7 @@ index 7d4dca7..3795b7a 100644
  if cc.has_function('thrd_create', prefix: '#include <threads.h>')
    if with_platform_android
 diff --git a/src/amd/vulkan/meson.build b/src/amd/vulkan/meson.build
-index 3696bad..ec3503d 100644
+index 3696bad244c..ec3503d85f0 100644
 --- a/src/amd/vulkan/meson.build
 +++ b/src/amd/vulkan/meson.build
 @@ -243,33 +243,56 @@ if radv_build_id != ''
@@ -117,7 +117,7 @@ index 3696bad..ec3503d 100644
  if with_symbols_check
    test(
 diff --git a/src/util/anon_file.c b/src/util/anon_file.c
-index a9ad2a2..96a3937 100644
+index a9ad2a2aad8..96a39370aa7 100644
 --- a/src/util/anon_file.c
 +++ b/src/util/anon_file.c
 @@ -187,7 +187,7 @@ os_create_anonymous_file(int64_t size, const char *debug_name)
@@ -130,7 +130,7 @@ index a9ad2a2..96a3937 100644
  #elif defined(__OpenBSD__)
     char template[] = "/tmp/mesa-XXXXXXXXXX";
 diff --git a/src/util/futex.h b/src/util/futex.h
-index b7ce088..319f02e 100644
+index b7ce0884155..319f02ef0eb 100644
 --- a/src/util/futex.h
 +++ b/src/util/futex.h
 @@ -29,7 +29,7 @@
@@ -143,7 +143,7 @@ index b7ce088..319f02e 100644
  #elif defined(__OpenBSD__)
  #define UTIL_FUTEX_SUPPORTED 1
 diff --git a/src/util/os_file.c b/src/util/os_file.c
-index 7d99383..5ba32f2 100644
+index 7d99383e8b7..5ba32f2ad8f 100644
 --- a/src/util/os_file.c
 +++ b/src/util/os_file.c
 @@ -257,7 +257,7 @@ os_same_file_description(int fd1, int fd2)
@@ -156,7 +156,7 @@ index 7d99383..5ba32f2 100644
     size_t len;
     if (sysctl(mib, ARRAY_SIZE(mib), NULL, &len, NULL, 0))
 diff --git a/src/util/u_cpu_detect.c b/src/util/u_cpu_detect.c
-index fd66769..db49368 100644
+index fd667697d3a..db493685577 100644
 --- a/src/util/u_cpu_detect.c
 +++ b/src/util/u_cpu_detect.c
 @@ -56,8 +56,10 @@
@@ -171,7 +171,7 @@ index fd66769..db49368 100644
  #if DETECT_OS_FREEBSD || DETECT_OS_OPENBSD
  #if __has_include(<sys/auxv.h>)
 diff --git a/src/util/u_process.c b/src/util/u_process.c
-index 6846acd..196d0e9 100644
+index 6846acd2e0b..196d0e9fb76 100644
 --- a/src/util/u_process.c
 +++ b/src/util/u_process.c
 @@ -286,7 +286,7 @@ util_get_command_line(char *cmdline, size_t size)
@@ -184,7 +184,7 @@ index 6846acd..196d0e9 100644
        CTL_KERN,
  #if DETECT_OS_NETBSD || DETECT_OS_OPENBSD
 diff --git a/src/util/u_thread.c b/src/util/u_thread.c
-index 3a8785c..5542e9f 100644
+index 3a8785cec92..5542e9f1b15 100644
 --- a/src/util/u_thread.c
 +++ b/src/util/u_thread.c
 @@ -101,7 +101,7 @@ util_set_thread_affinity(thrd_t thread,
@@ -197,5 +197,5 @@ index 3a8785c..5542e9f 100644
  
     if (old_mask) {
 -- 
-2.53.0
+2.43.0
 

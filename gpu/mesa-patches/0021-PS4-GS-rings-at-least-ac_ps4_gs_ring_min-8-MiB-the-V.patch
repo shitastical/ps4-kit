@@ -1,7 +1,7 @@
-From dbe2783c3a12ff92f23a8506e91eec23b75b46cc Mon Sep 17 00:00:00 2001
+From 2b09301b2ecdc0475dc070f1e27b6d7769077273 Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Mon, 19 Oct 2026 07:42:50 +0300
-Subject: [PATCH 21/32] PS4: GS rings at least ac_ps4_gs_ring_min (8 MiB) - the
+Subject: [PATCH 21/34] PS4: GS rings at least ac_ps4_gs_ring_min (8 MiB) - the
  VGT wraps them at a larger size than RADV programs
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 21/32] PS4: GS rings at least ac_ps4_gs_ring_min (8 MiB) - the
  1 file changed, 17 insertions(+), 1 deletion(-)
 
 diff --git a/src/amd/vulkan/radv_queue.c b/src/amd/vulkan/radv_queue.c
-index d4dc52d..0661c6a 100644
+index d4dc52df7c5..0661c6a567b 100644
 --- a/src/amd/vulkan/radv_queue.c
 +++ b/src/amd/vulkan/radv_queue.c
 @@ -41,7 +41,14 @@ void ac_ps4_trace(const char *fmt, ...);
@@ -45,5 +45,5 @@ index d4dc52d..0661c6a 100644
     needs.scratch_waves =
        needs.scratch_size_per_wave ? MIN2(needs.scratch_waves, UINT32_MAX / needs.scratch_size_per_wave) : 0;
 -- 
-2.53.0
+2.43.0
 

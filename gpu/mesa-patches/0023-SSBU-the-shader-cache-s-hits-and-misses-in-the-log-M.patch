@@ -1,7 +1,7 @@
-From 4e70ee3a0aa1eeff0c3b7d46d8c369eb662763a2 Mon Sep 17 00:00:00 2001
+From 4e10bad4a09c77c27ba2b438b217e1326382b283 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Wed, 21 Oct 2026 08:05:45 +0300
-Subject: [PATCH 23/32] SSBU: the shader cache's hits and misses in the log;
+Subject: [PATCH 23/34] SSBU: the shader cache's hits and misses in the log;
  Mesa's own-user check off on the PS4
 
 ---
@@ -10,7 +10,7 @@ Subject: [PATCH 23/32] SSBU: the shader cache's hits and misses in the log;
  2 files changed, 13 insertions(+), 1 deletion(-)
 
 diff --git a/src/util/disk_cache.c b/src/util/disk_cache.c
-index d86153a..b58427c 100644
+index d86153a8a43..b58427ca0a4 100644
 --- a/src/util/disk_cache.c
 +++ b/src/util/disk_cache.c
 @@ -630,6 +630,18 @@ disk_cache_get(struct disk_cache *cache, const cache_key key, size_t *size)
@@ -33,7 +33,7 @@ index d86153a..b58427c 100644
  }
  
 diff --git a/src/util/u_debug.h b/src/util/u_debug.h
-index 9608e97..2cf6459 100644
+index 9608e97ba65..2cf645903a1 100644
 --- a/src/util/u_debug.h
 +++ b/src/util/u_debug.h
 @@ -402,7 +402,7 @@ debug_get_option_ ## suffix (void) \
@@ -46,5 +46,5 @@ index 9608e97..2cf6459 100644
  #else
     return geteuid() == getuid() && getegid() == getgid();
 -- 
-2.53.0
+2.43.0
 

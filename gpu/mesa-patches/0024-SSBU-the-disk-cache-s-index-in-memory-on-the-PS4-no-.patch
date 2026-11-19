@@ -1,7 +1,7 @@
-From a94709a1784f1e7c70ca0862aca270948d46bb04 Mon Sep 17 00:00:00 2001
+From ee2778fdf04b0aed9307a28c47ada0cef3c82dd5 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Wed, 21 Oct 2026 08:08:32 +0300
-Subject: [PATCH 24/32] SSBU: the disk cache's index in memory on the PS4 (no
+Subject: [PATCH 24/34] SSBU: the disk cache's index in memory on the PS4 (no
  shared file mapping)
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 24/32] SSBU: the disk cache's index in memory on the PS4 (no
  1 file changed, 20 insertions(+)
 
 diff --git a/src/util/disk_cache_os.c b/src/util/disk_cache_os.c
-index f31c8dc..6ea537a 100644
+index f31c8dce1b9..6ea537a7465 100644
 --- a/src/util/disk_cache_os.c
 +++ b/src/util/disk_cache_os.c
 @@ -1107,6 +1107,22 @@ disk_cache_mmap_cache_index(void *mem_ctx, struct disk_cache *cache)
@@ -48,5 +48,5 @@ index f31c8dc..6ea537a 100644
  
  void *
 -- 
-2.53.0
+2.43.0
 

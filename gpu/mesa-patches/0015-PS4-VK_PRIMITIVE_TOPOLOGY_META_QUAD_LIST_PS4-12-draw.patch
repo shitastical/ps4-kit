@@ -1,7 +1,7 @@
-From 18a043229cb584cd2b713f1ecb658749fb63453d Mon Sep 17 00:00:00 2001
+From 75a0e1e05eca10582a541ffa9d3dc57a43ee38b4 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Fri, 16 Oct 2026 06:07:17 +0300
-Subject: [PATCH 15/32] PS4: VK_PRIMITIVE_TOPOLOGY_META_QUAD_LIST_PS4 (12)
+Subject: [PATCH 15/34] PS4: VK_PRIMITIVE_TOPOLOGY_META_QUAD_LIST_PS4 (12)
  draws the GPU s own quad lists (DI_PT_QUADLIST)
 
 ---
@@ -12,7 +12,7 @@ Subject: [PATCH 15/32] PS4: VK_PRIMITIVE_TOPOLOGY_META_QUAD_LIST_PS4 (12)
  4 files changed, 8 insertions(+)
 
 diff --git a/src/amd/vulkan/radv_cmd_buffer.c b/src/amd/vulkan/radv_cmd_buffer.c
-index 46373c4..ce2e9f5 100644
+index 46373c4cc0f..ce2e9f5cd5f 100644
 --- a/src/amd/vulkan/radv_cmd_buffer.c
 +++ b/src/amd/vulkan/radv_cmd_buffer.c
 @@ -6899,6 +6899,7 @@ static const struct radv_prim_vertex_count prim_size_table[] = {
@@ -24,7 +24,7 @@ index 46373c4..ce2e9f5 100644
     [V_008958_DI_PT_2D_TRI_STRIP] = {0, 0},
  };
 diff --git a/src/amd/vulkan/radv_pipeline_graphics.h b/src/amd/vulkan/radv_pipeline_graphics.h
-index c4dfd25..04a7206 100644
+index c4dfd25d4b5..04a7206d7c3 100644
 --- a/src/amd/vulkan/radv_pipeline_graphics.h
 +++ b/src/amd/vulkan/radv_pipeline_graphics.h
 @@ -228,6 +228,8 @@ radv_conv_prim_to_gs_out(uint32_t topology, bool is_ngg)
@@ -46,7 +46,7 @@ index c4dfd25..04a7206 100644
        UNREACHABLE("unhandled primitive type");
     }
 diff --git a/src/vulkan/util/vk_internal_exts.h b/src/vulkan/util/vk_internal_exts.h
-index 497d28b..d912d66 100644
+index 497d28bd40b..d912d660394 100644
 --- a/src/vulkan/util/vk_internal_exts.h
 +++ b/src/vulkan/util/vk_internal_exts.h
 @@ -24,6 +24,8 @@ extern "C" {
@@ -59,7 +59,7 @@ index 497d28b..d912d66 100644
     (VkImageViewCreateFlagBits)0x80000000
  
 diff --git a/src/vulkan/util/vk_util.c b/src/vulkan/util/vk_util.c
-index 289b8ac..9402eed 100644
+index 289b8acfeab..9402eed33d5 100644
 --- a/src/vulkan/util/vk_util.c
 +++ b/src/vulkan/util/vk_util.c
 @@ -157,6 +157,7 @@ vk_topology_to_mesa(VkPrimitiveTopology topology)
@@ -71,5 +71,5 @@ index 289b8ac..9402eed 100644
        return MESA_PRIM_TRIANGLES;
     case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
 -- 
-2.53.0
+2.43.0
 

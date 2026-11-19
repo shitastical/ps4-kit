@@ -1,7 +1,7 @@
-From f023cb96da76de0d0fa9c839f43c693f2c98839b Mon Sep 17 00:00:00 2001
+From 3277a9ff1ca2219093d767080d0b7aaf0adeba01 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 23:49:57 +0300
-Subject: [PATCH 13/32] PS4: hand the trace id address to the layer flight
+Subject: [PATCH 13/34] PS4: hand the trace id address to the layer flight
  recorder
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 13/32] PS4: hand the trace id address to the layer flight
  1 file changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/src/amd/vulkan/radv_device.c b/src/amd/vulkan/radv_device.c
-index 39ab1f5..fc63006 100644
+index 39ab1f5d749..fc630060bbb 100644
 --- a/src/amd/vulkan/radv_device.c
 +++ b/src/amd/vulkan/radv_device.c
 @@ -670,8 +670,13 @@ radv_device_init_device_fault_detection(struct radv_device *device)
@@ -29,5 +29,5 @@ index 39ab1f5..fc63006 100644
        return VK_SUCCESS;
     }
 -- 
-2.53.0
+2.43.0
 

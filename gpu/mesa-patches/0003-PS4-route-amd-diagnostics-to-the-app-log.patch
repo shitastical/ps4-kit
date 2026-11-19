@@ -1,7 +1,7 @@
-From 34fcbbebd02bba4037c250d0e6aa9704915e2292 Mon Sep 17 00:00:00 2001
+From 9f45624420c5695344bfab81abf3a4127efce1bf Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 13:38:07 +0300
-Subject: [PATCH 03/32] PS4: route amd diagnostics to the app log
+Subject: [PATCH 03/34] PS4: route amd diagnostics to the app log
 
 ---
  src/amd/common/ac_linux_drm.h |  7 ++++
@@ -9,7 +9,7 @@ Subject: [PATCH 03/32] PS4: route amd diagnostics to the app log
  2 files changed, 65 insertions(+), 16 deletions(-)
 
 diff --git a/src/amd/common/ac_linux_drm.h b/src/amd/common/ac_linux_drm.h
-index 9ea563c..a5f0005 100644
+index 9ea563cc8c6..a5f000581d1 100644
 --- a/src/amd/common/ac_linux_drm.h
 +++ b/src/amd/common/ac_linux_drm.h
 @@ -317,6 +317,13 @@ typedef struct amdgpu_va *amdgpu_va_handle;
@@ -27,7 +27,7 @@ index 9ea563c..a5f0005 100644
  extern "C" {
  #endif
 diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
-index 3bf73ac..1b3945a 100755
+index 3bf73ac4ff6..1b3945ab95f 100755
 --- a/src/amd/common/ac_ps4_drm.c
 +++ b/src/amd/common/ac_ps4_drm.c
 @@ -25,7 +25,9 @@
@@ -185,5 +185,5 @@ index 3bf73ac..1b3945a 100755
  }
  
 -- 
-2.53.0
+2.43.0
 

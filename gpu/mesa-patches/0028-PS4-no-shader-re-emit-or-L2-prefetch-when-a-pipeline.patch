@@ -1,7 +1,7 @@
-From c60f4baca6c99b7add8ca4156490c2feb7a839a7 Mon Sep 17 00:00:00 2001
+From dc49520b6f31cd233f75e4d32e9b0a5e65ff2071 Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Sun, 25 Oct 2026 03:11:22 +0300
-Subject: [PATCH 28/32] PS4: no shader re-emit or L2 prefetch when a pipeline
+Subject: [PATCH 28/34] PS4: no shader re-emit or L2 prefetch when a pipeline
  switch keeps the same shaders (pipeline switch 0.246 -> 0.113 us on the PC
  host build)
 
@@ -10,7 +10,7 @@ Subject: [PATCH 28/32] PS4: no shader re-emit or L2 prefetch when a pipeline
  1 file changed, 28 insertions(+), 3 deletions(-)
 
 diff --git a/src/amd/vulkan/radv_cmd_buffer.c b/src/amd/vulkan/radv_cmd_buffer.c
-index 63ac834..39b2f11 100644
+index 63ac834c188..39b2f11cd62 100644
 --- a/src/amd/vulkan/radv_cmd_buffer.c
 +++ b/src/amd/vulkan/radv_cmd_buffer.c
 @@ -3930,6 +3930,23 @@ radv_emit_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
@@ -73,5 +73,5 @@ index 63ac834..39b2f11 100644
     const struct radv_shader *ps = radv_get_shader(graphics_pipeline->base.shaders, MESA_SHADER_FRAGMENT);
  
 -- 
-2.53.0
+2.43.0
 

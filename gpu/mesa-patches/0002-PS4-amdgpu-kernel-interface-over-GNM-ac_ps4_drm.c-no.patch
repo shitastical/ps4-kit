@@ -1,7 +1,7 @@
-From 045a56d165d9de011ac8be55a173e40094a803df Mon Sep 17 00:00:00 2001
+From 612178267dd3b4ec35fd64828da9c85ff2b4b20d Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 13:26:26 +0300
-Subject: [PATCH 02/32] PS4: amdgpu kernel interface over GNM (ac_ps4_drm.c),
+Subject: [PATCH 02/34] PS4: amdgpu kernel interface over GNM (ac_ps4_drm.c),
  no DRM
 
 ---
@@ -15,7 +15,7 @@ Subject: [PATCH 02/32] PS4: amdgpu kernel interface over GNM (ac_ps4_drm.c),
  create mode 100755 src/amd/common/ac_ps4_drm.c
 
 diff --git a/meson.build b/meson.build
-index 3795b7a..2a78cf3 100644
+index 3795b7aae04..2a78cf31374 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -1527,6 +1527,9 @@ endif
@@ -30,7 +30,7 @@ index 3795b7a..2a78cf3 100644
  if cc.has_function('thrd_create', prefix: '#include <threads.h>')
 diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
 new file mode 100755
-index 0000000..3bf73ac
+index 00000000000..3bf73ac4ff6
 --- /dev/null
 +++ b/src/amd/common/ac_ps4_drm.c
 @@ -0,0 +1,1405 @@
@@ -1440,7 +1440,7 @@ index 0000000..3bf73ac
 +   return NULL;
 +}
 diff --git a/src/amd/common/meson.build b/src/amd/common/meson.build
-index e26f6f8..7d7a4f2 100644
+index e26f6f8eb39..7d7a4f21637 100644
 --- a/src/amd/common/meson.build
 +++ b/src/amd/common/meson.build
 @@ -136,7 +136,11 @@ amd_common_files = files(
@@ -1457,7 +1457,7 @@ index e26f6f8..7d7a4f2 100644
      'ac_linux_drm.c',
    )
 diff --git a/src/amd/vulkan/radv_instance.c b/src/amd/vulkan/radv_instance.c
-index 796eb28..374a752 100644
+index 796eb287fba..374a752c4db 100644
 --- a/src/amd/vulkan/radv_instance.c
 +++ b/src/amd/vulkan/radv_instance.c
 @@ -447,7 +447,11 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
@@ -1473,7 +1473,7 @@ index 796eb28..374a752 100644
  
     if (instance->debug_flags & RADV_DEBUG_STARTUP)
 diff --git a/src/amd/vulkan/radv_physical_device.c b/src/amd/vulkan/radv_physical_device.c
-index 86db276..3a3a7b8 100644
+index 86db2762b13..3a3a7b85a00 100644
 --- a/src/amd/vulkan/radv_physical_device.c
 +++ b/src/amd/vulkan/radv_physical_device.c
 @@ -2353,7 +2353,11 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
@@ -1498,7 +1498,7 @@ index 86db276..3a3a7b8 100644
           if (master_fd >= 0) {
              uint32_t accel_working = 0;
 diff --git a/src/vulkan/runtime/meson.build b/src/vulkan/runtime/meson.build
-index 3b830a7..58b1fac 100644
+index 3b830a75213..58b1facc0a0 100644
 --- a/src/vulkan/runtime/meson.build
 +++ b/src/vulkan/runtime/meson.build
 @@ -57,6 +57,9 @@ vulkan_lite_runtime_deps = [
@@ -1512,5 +1512,5 @@ index 3b830a7..58b1fac 100644
  
  if with_platform_android
 -- 
-2.53.0
+2.43.0
 

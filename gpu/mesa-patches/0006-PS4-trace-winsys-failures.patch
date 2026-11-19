@@ -1,7 +1,7 @@
-From 6b0ebba7467c8ac48bec7b229b3eb9f1b8dc70e6 Mon Sep 17 00:00:00 2001
+From 4dc1e7cb6b006aace43e5bd6862e58ad3170f1d7 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 17:49:29 +0300
-Subject: [PATCH 06/32] PS4: trace winsys failures
+Subject: [PATCH 06/34] PS4: trace winsys failures
 
 ---
  src/amd/common/ac_ps4_drm.c                   | 31 +++++++++++++---
@@ -10,7 +10,7 @@ Subject: [PATCH 06/32] PS4: trace winsys failures
  3 files changed, 64 insertions(+), 27 deletions(-)
 
 diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
-index 231af39..bfcdf32 100755
+index 231af394e4e..bfcdf32779b 100755
 --- a/src/amd/common/ac_ps4_drm.c
 +++ b/src/amd/common/ac_ps4_drm.c
 @@ -254,6 +254,10 @@ ps4_reserve(uint64_t addr, uint64_t size)
@@ -102,7 +102,7 @@ index 231af39..bfcdf32 100755
     struct amdgpu_va *va = malloc(sizeof(*va));
     va->heap = heap;
 diff --git a/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_bo.c b/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_bo.c
-index bdfd6ea..fb84e4b 100644
+index bdfd6eab0c5..fb84e4bab9a 100644
 --- a/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_bo.c
 +++ b/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_bo.c
 @@ -28,6 +28,13 @@
@@ -244,7 +244,7 @@ index bdfd6ea..fb84e4b 100644
  
     if (info.preferred_heap & AMDGPU_GEM_DOMAIN_VRAM)
 diff --git a/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_cs.c b/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_cs.c
-index a3c7370..e7da9a9 100644
+index a3c7370723b..e7da9a9d0b1 100644
 --- a/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_cs.c
 +++ b/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_cs.c
 @@ -101,6 +101,13 @@ struct radv_winsys_sem_info {
@@ -337,5 +337,5 @@ index a3c7370..e7da9a9 100644
        num_chunks++;
     }
 -- 
-2.53.0
+2.43.0
 

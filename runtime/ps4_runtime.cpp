@@ -2452,6 +2452,8 @@ int __cxa_thread_atexit_impl(void (*dtor)(void*), void* obj, void* /*dso_symbol*
 
 extern "C" {
 int sceSystemServiceLoadExec(const char* path, char* const argv[]);
+// gpu/ps4_vk_wsi.cpp, when the app links Vulkan: hands VideoOut back before the shell ends the process.
+__attribute__((weak)) void ps4kit_video_shutdown(void);
 
 __attribute__((noreturn)) void ps4_kit_exit(int status) {
     if (ps4_boot_trace) {
@@ -2459,6 +2461,8 @@ __attribute__((noreturn)) void ps4_kit_exit(int status) {
         snprintf(line, sizeof line, "exit(%d): asking the shell to close the app", status);
         ps4_boot_trace(line);
     }
+    if (ps4kit_video_shutdown)
+        ps4kit_video_shutdown();  // the screen is ours until we give it back
     fflush(nullptr);  // the logs' last lines
     sceSystemServiceLoadExec("exit", nullptr);
     // The shell ends the process within moments; until it does, nothing else may run teardown.

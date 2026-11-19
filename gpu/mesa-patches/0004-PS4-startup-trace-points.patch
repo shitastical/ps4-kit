@@ -1,7 +1,7 @@
-From e48d7ad24d13424fa5a265b6eb8f6e68bfcab076 Mon Sep 17 00:00:00 2001
+From bf612191fda9a12b3c6e69c6913919682debfe22 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 13:44:12 +0300
-Subject: [PATCH 04/32] PS4: startup trace points
+Subject: [PATCH 04/34] PS4: startup trace points
 
 ---
  src/amd/common/ac_linux_drm.h                     |  1 +
@@ -11,7 +11,7 @@ Subject: [PATCH 04/32] PS4: startup trace points
  4 files changed, 37 insertions(+)
 
 diff --git a/src/amd/common/ac_linux_drm.h b/src/amd/common/ac_linux_drm.h
-index a5f0005..d447567 100644
+index a5f000581d1..d447567a25c 100644
 --- a/src/amd/common/ac_linux_drm.h
 +++ b/src/amd/common/ac_linux_drm.h
 @@ -322,6 +322,7 @@ typedef struct amdgpu_va *amdgpu_va_handle;
@@ -23,7 +23,7 @@ index a5f0005..d447567 100644
  
  #ifdef __cplusplus
 diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
-index 1b3945a..b55b776 100755
+index 1b3945ab95f..b55b7767357 100755
 --- a/src/amd/common/ac_ps4_drm.c
 +++ b/src/amd/common/ac_ps4_drm.c
 @@ -1445,3 +1445,15 @@ drmGetFormatModifierName(uint64_t modifier)
@@ -43,7 +43,7 @@ index 1b3945a..b55b776 100755
 +   ps4_log("%s", line);
 +}
 diff --git a/src/amd/vulkan/radv_physical_device.c b/src/amd/vulkan/radv_physical_device.c
-index 3a3a7b8..3299481 100644
+index 3a3a7b85a00..32994812552 100644
 --- a/src/amd/vulkan/radv_physical_device.c
 +++ b/src/amd/vulkan/radv_physical_device.c
 @@ -53,6 +53,13 @@ typedef void *drmDevicePtr;
@@ -102,7 +102,7 @@ index 3a3a7b8..3299481 100644
        close(fd);
     if (master_fd != -1)
 diff --git a/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_winsys.c b/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_winsys.c
-index 438b434..c836a6e 100644
+index 438b4341220..c836a6ec572 100644
 --- a/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_winsys.c
 +++ b/src/amd/vulkan/winsys/amdgpu/radv_amdgpu_winsys.c
 @@ -22,6 +22,13 @@
@@ -144,5 +144,5 @@ index 438b434..c836a6e 100644
  fail:
     if (winsyses && _mesa_hash_table_num_entries(winsyses) == 0) {
 -- 
-2.53.0
+2.43.0
 

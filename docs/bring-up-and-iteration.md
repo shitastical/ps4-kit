@@ -166,3 +166,10 @@ free.
    eboot-only package before the next iteration; otherwise every test burns a full install.
 6. Verify the data root actually exists on the console before launching (a missing
    `/data/stk/data` looks like a black screen too).
+
+## 5. GPU faults and the black screen after closing
+
+The submitDone/VideoOut failures (a 150 s texture-loading freeze, then a display that stayed black
+until SceShellUI restarted) are written up in
+[gpu-submit-and-videout.md](gpu-submit-and-videout.md), with the klog signature, the symbolization
+recipe and the two rules every port must follow.

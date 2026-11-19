@@ -1,0 +1,61 @@
+From 22a4a12e7b3a04db89b1b13b2b230ba14aa905bf Mon Sep 17 00:00:00 2001
+From: ps4-kit <ps4-kit@localhost>
+Date: Thu, 19 Nov 2026 17:22:51 -0500
+Subject: [PATCH 34/34] PS4: submitDone only after a flip whose queue has
+ drained (the kernel's 500 ms idle deadline turned texture loading into
+ GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC)
+
+---
+ src/amd/common/ac_ps4_drm.c | 20 +++++++++++---------
+ 1 file changed, 11 insertions(+), 9 deletions(-)
+
+diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
+index d131b301789..cba3ec97aed 100644
+--- a/src/amd/common/ac_ps4_drm.c
++++ b/src/amd/common/ac_ps4_drm.c
+@@ -2601,22 +2601,15 @@ ps4_submit_thread(void *arg)
+       pthread_mutex_unlock(&ps4_job_lock);
+ 
+       ac_drm_device *dev = job->dev;
++      const bool flip = job->flip;
+       void *ccb[68] = {0};
+       uint32_t ccb_sizes[68] = {0};
+       int r;
+-      if (job->flip)
++      if (flip)
+          r = dev->submit_and_flip(job->num_ibs, job->dcb, job->dcb_sizes, ccb, ccb_sizes, job->video,
+                                   job->buffer, job->mode, job->arg);
+       else
+          r = dev->submit(job->num_ibs, job->dcb, job->dcb_sizes, ccb, ccb_sizes);
+-      /* sceGnmSubmitDone tells the system the frame's work is in, and the kernel then expects the
+-       * GPU to fall idle within 500 ms ("GPU failed to become idle within 500 ms after submitDone",
+-       * and after enough of those GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC). A texture upload
+-       * queue keeps the GPU busy far longer than that, so the old "at least every 4 ms" fallback
+-       * turned a loading screen into a GPU fault, a frozen app and a console whose shell had to
+-       * restart. Only a flip ends a frame: one submitDone after it, none while work is queued. */
+-      if (job->flip)
+-         dev->submit_done();
+       if (r) {
+          static unsigned logged;
+          if (logged++ < 8)
+@@ -2628,8 +2621,17 @@ ps4_submit_thread(void *arg)
+ 
+       pthread_mutex_lock(&ps4_job_lock);
+       ps4_job_head++;
++      const bool drained = ps4_job_tail == ps4_job_head;
+       pthread_cond_signal(&ps4_job_space);
+       pthread_mutex_unlock(&ps4_job_lock);
++      /* sceGnmSubmitDone tells the system the frame's work is in and that the GPU may go idle; the
++       * kernel then requires idle within 500 ms (its log: "GPU failed to become idle within 500 ms
++       * after submitDone", and after enough of those GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC:
++       * the app froze for minutes and the console came back with its shell restarted). Promise it
++       * only when no submission is queued behind this one - during texture loading there always is,
++       * so a loading screen never promises an idle GPU it cannot deliver. */
++      if (flip && drained)
++         dev->submit_done();
+    }
+    return NULL;
+ }
+-- 
+2.43.0
+
