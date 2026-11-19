@@ -131,7 +131,11 @@ free.
   `MLSD`, `SIZE` and `MKD` work. One big file moves at ~85 MB/s, but thousands of small files run at
   ~3-4 MiB/s because each STOR pays a handshake: plan a few minutes for a full asset mirror.
 - Upload: `curl -sS -T file ftp://<host>:2121/data/pkg/<name> --user anonymous:anonymous`.
-- The app directory is writable but useless for code (see above); don't try to hot-swap the eboot.
+- The installed app is `/user/app/<TITLE_ID>/app.pkg` plus `app.json` / `app.pbm`; there is no
+  loose `eboot.bin`, so the code cannot be hot-swapped over FTP. Reinstalling the same content ID
+  *and* version fails with "package already installed". Ship a higher `APP_VER` instead: the same
+  content ID with a newer version installs as an update (~60 MB) without uninstalling, and the save
+  data is untouched. `ps4/deploy.sh` keeps a counter in `out/.stk-version` and bumps it every run.
 - Logs live in `/data/ps4-kit/`: `boot-trace.log`, `crash.log`, `hang.log`.
 - An FTP upload tool needs a socket timeout, retries with reconnect, and size-based resume. Without
   them a single stalled data connection blocks forever and looks like "the command hangs" (it did).
