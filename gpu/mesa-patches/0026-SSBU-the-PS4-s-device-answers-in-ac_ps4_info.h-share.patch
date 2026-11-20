@@ -1,7 +1,7 @@
 From ce2873468a62e7fd4d32ea7b37e381c2ddc5607f Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Wed, 21 Oct 2026 19:09:48 +0300
-Subject: [PATCH 26/34] SSBU: the PS4's device answers in ac_ps4_info.h, shared
+Subject: [PATCH 26/35] SSBU: the PS4's device answers in ac_ps4_info.h, shared
  with a PC build (AC_PS4_HOST_IDENTITY: ac_linux_drm.c answers as the console,
  conditional rendering off) that fills the PS4's shader cache
 

@@ -1,7 +1,7 @@
 From ff60971dab7f95f7d21442b9d1022f9dc99458a1 Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Mon, 19 Oct 2026 07:12:26 +0300
-Subject: [PATCH 20/34] PS4: GS ring probe control read (VGT_NUM_INSTANCES,
+Subject: [PATCH 20/35] PS4: GS ring probe control read (VGT_NUM_INSTANCES,
  VGT_PRIMITIVE_TYPE)
 
 ---

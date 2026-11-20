@@ -1,7 +1,7 @@
 From 1ed8b23db383e09ac947555b6262098ed0cbfcc8 Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Thu, 19 Nov 2026 17:20:14 -0500
-Subject: [PATCH 33/34] PS4: submitDone only after a flip, never on a timer
+Subject: [PATCH 33/35] PS4: submitDone only after a flip, never on a timer
  while work is queued (the kernel's 500 ms idle deadline turned texture
  loading into GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC)
 

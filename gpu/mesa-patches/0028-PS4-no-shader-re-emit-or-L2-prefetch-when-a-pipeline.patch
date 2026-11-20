@@ -1,7 +1,7 @@
 From dc49520b6f31cd233f75e4d32e9b0a5e65ff2071 Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Sun, 25 Oct 2026 03:11:22 +0300
-Subject: [PATCH 28/34] PS4: no shader re-emit or L2 prefetch when a pipeline
+Subject: [PATCH 28/35] PS4: no shader re-emit or L2 prefetch when a pipeline
  switch keeps the same shaders (pipeline switch 0.246 -> 0.113 us on the PC
  host build)
 

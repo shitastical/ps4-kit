@@ -1,0 +1,98 @@
+From a68abf2049adf3997c222c1778de9272b6e2c2ef Mon Sep 17 00:00:00 2001
+From: ps4-kit <ps4-kit@localhost>
+Date: Thu, 19 Nov 2026 19:34:09 -0500
+Subject: [PATCH 35/35] PS4: prove a flip was made before submitDone
+
+sceGnmSubmitDone promises the kernel the GPU can fall idle within 500 ms.
+Calling it from present, before sceVideoOutSubmitFlip, starts that deadline
+while the frame and its uploads are still queued; the kernel then faults with
+GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC after 500 ms. Present is exactly
+where STK's 1 fps (a 512 ms acquire and flip per frame) and its tutorial
+freeze came from.
+
+Only VideoOut's flipArg proves a frame ended, so the WSI now calls
+ac_ps4_flip_made(flipArg), which accepts a strictly newer flip and ignores a
+repeat. The old ac_ps4_submit_done() stays as an inert symbol, so a port
+written against it still links but can no longer make a premature promise.
+
+Also charge a deferred free to the next submission instead of the last one:
+a buffer freed while the next command stream is being built could be retired
+when the previous submission completed, while that pending stream still
+referenced it.
+---
+ src/amd/common/ac_ps4_drm.c | 45 ++++++++++++++++++++++++++++++++-----
+ 1 file changed, 40 insertions(+), 5 deletions(-)
+
+diff --git a/src/amd/common/ac_ps4_drm.c b/src/amd/common/ac_ps4_drm.c
+index 6f6fdd4939b..fddf3c52819 100644
+--- a/src/amd/common/ac_ps4_drm.c
++++ b/src/amd/common/ac_ps4_drm.c
+@@ -1838,7 +1838,12 @@ static void
+ ps4_defer(ac_drm_device *dev, struct ps4_deferred d)
+ {
+    simple_mtx_lock(&dev->lock);
+-   d.seq = dev->last_seq;
++   /* A buffer can be freed while the next frame's command stream is still being built, i.e.
++    * before that stream has a sequence number. Stamping with last_seq would retire it as soon
++    * as the *previous* submission completes, while the pending stream still references it (a
++    * nested IB pointing at released direct memory is a GPU page fault). Charge the free to the
++    * next submission so the range stays mapped until the stream that can reference it is done. */
++   d.seq = dev->last_seq + 1;
+    if (dev->num_deferred == dev->deferred_cap) {
+       dev->deferred_cap = MAX2(dev->deferred_cap * 2, 256);
+       dev->deferred = realloc(dev->deferred, dev->deferred_cap * sizeof(*dev->deferred));
+@@ -2579,17 +2584,47 @@ static pthread_cond_t ps4_job_space = PTHREAD_COND_INITIALIZER;
+ static bool ps4_job_thread_started;
+ void ps4_boost_thread(void); /* port/ps4_runtime.cpp: above the default priority */
+ 
+-/* The WSI calls this when VideoOut reports a flip made, i.e. after that frame's GPU work is done. */
++/* The only safe place for sceGnmSubmitDone: a flip whose flipArg VideoOut reports made, i.e. after
++ * that frame's GPU work is actually done. The argument is monotonic, so re-reporting an old flip is
++ * ignored instead of promising the kernel a second time that the GPU can go idle. */
+ static ac_drm_device *ps4_submit_dev;
+-void ac_ps4_submit_done(void);
++static int64_t ps4_last_flip_made = -1;
++void ac_ps4_flip_made(int64_t flip_arg);
+ void
+-ac_ps4_submit_done(void)
+-{
++ac_ps4_flip_made(int64_t flip_arg)
++{
++   bool first = false;
++   int64_t prev = __atomic_load_n(&ps4_last_flip_made, __ATOMIC_ACQUIRE);
++   while (flip_arg > prev) {
++      if (__atomic_compare_exchange_n(&ps4_last_flip_made, &prev, flip_arg, false,
++                                      __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
++         first = true;
++         break;
++      }
++   }
++   if (!first)
++      return;
+    ac_drm_device *dev = __atomic_load_n(&ps4_submit_dev, __ATOMIC_ACQUIRE);
+    if (dev && dev->submit_done)
+       dev->submit_done();
+ }
+ 
++/* Deprecated and deliberately inert. Without the flipArg there is no proof that a flip was made,
++ * and sceGnmSubmitDone while the frame is still queued promises an idle GPU within 500 ms that the
++ * kernel then faults on (GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC). Kept as a symbol so ports
++ * written against the old API still link; it does nothing and says so once. */
++void ac_ps4_submit_done(void);
++void
++ac_ps4_submit_done(void)
++{
++   static bool warned;
++   if (warned)
++      return;
++   warned = true;
++   fprintf(stderr, "radv/ps4: ac_ps4_submit_done() ignored; call ac_ps4_flip_made(flipArg) after "
++                   "sceVideoOutGetFlipStatus reports the flip made\n");
++}
++
+ static void
+ ps4_fence_at_least(ac_drm_device *dev, uint64_t seq)
+ {
+-- 
+2.43.0
+

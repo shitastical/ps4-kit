@@ -1,7 +1,7 @@
 From ee2778fdf04b0aed9307a28c47ada0cef3c82dd5 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Wed, 21 Oct 2026 08:08:32 +0300
-Subject: [PATCH 24/34] SSBU: the disk cache's index in memory on the PS4 (no
+Subject: [PATCH 24/35] SSBU: the disk cache's index in memory on the PS4 (no
  shared file mapping)
 
 ---

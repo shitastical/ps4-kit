@@ -20,7 +20,12 @@
 
 extern "C" int sceVideoOutClose(int handle);  // exported by libSceVideoOut, not in every SDK header
 
-#include <orbis/SystemService.h>
+// ps4-kit: declared here, not from <orbis/SystemService.h>, whose two status queries have no return type. Their
+// answer is what keeps the app off a display the shell UI owns. Weak: a firmware without them simply never pauses.
+extern "C" int32_t sceSystemServiceHideSplashScreen(void);
+extern "C" int sceSystemServiceIsShellUiFgAndGameBgCpuMode(void) __attribute__((weak));
+extern "C" int sceSystemServiceIsAppSuspended(void) __attribute__((weak));
+
 #include <orbis/VideoOut.h>
 #include <orbis/libkernel.h>
 
@@ -46,6 +51,9 @@ extern "C" VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_common_GetDeviceProcAddr(
 extern "C" int ac_ps4_submit_flip(int video, unsigned buffer, unsigned mode, int64_t arg) __attribute__((weak));
 // runtime/ps4_crashlog.cpp; weak so this file also links without it
 extern "C" void ps4_boot_trace(const char* stage) __attribute__((weak));
+// ac_ps4_drm.c: sceGnmSubmitDone for a flip VideoOut reports made, identified by its flipArg.
+// Weak: with a Mesa without it, presents still work; they just never promise the GPU is idle.
+extern "C" void ac_ps4_flip_made(int64_t) __attribute__((weak));
 
 namespace ps4kit {
 
@@ -105,6 +113,11 @@ OrbisKernelEqueue g_flip_queue = 0;
 std::mutex g_video_lock;
 
 std::atomic<uint64_t> g_flips{0};
+// The fence the app attached to the frame it has just submitted. Present waits on it: the port's
+// vkQueueWaitIdle does not reach the submit thread, so without this the flip is submitted while the
+// GPU is still drawing, and both SubmitFlip and the next acquire pay the kernel's 500 ms deadline
+// (measured in boot-trace: 512 ms in present and 512 ms in acquire, every frame).
+std::atomic<VkFence> g_pending_fence{VK_NULL_HANDLE};
 std::atomic<uint64_t> g_last_present_ns{0};
 
 // swapchain creation, banks and the parked swapchains
@@ -752,12 +765,41 @@ std::atomic<int64_t> g_last_arg{0};
 constexpr int kWaitTries = 40;
 constexpr OrbisKernelUseconds kWaitSlice = 5000;  // 40 x 5 ms: 200 ms at most, then the image is used anyway
 
+// VideoOut stops consuming flips while the shell UI is in front. A backlog larger than a swapchain can hold means
+// nobody is taking them, even on a firmware where the status queries below are not exported.
+bool display_backlog() {
+    if (g_video < 0) return false;
+    OrbisVideoOutFlipStatus status{};
+    if (sceVideoOutGetFlipStatus(g_video, &status) < 0) return false;
+    return int64_t(g_flips.load(std::memory_order_relaxed)) - status.flipArg > 4;
+}
+
+// The shell UI (home menu, share screen) owns the display while it is in the foreground. Our flips are not serviced
+// then, and the fence of the frame whose flip is waiting never signals; queueing more work behind it is how the
+// app used to end up waiting for the device forever and taking the console's UI with it. No acquires until it is
+// gone: the app draws nothing and resumes on the first acquire after.
+bool system_ui_overlaid() {
+    // The flip backlog is the reliable signal: it comes from VideoOut itself. The shell-UI status
+    // query is not used because its polarity differs between firmware, and a false positive would
+    // hold every frame forever.
+    if (display_backlog()) return true;
+    if (sceSystemServiceIsAppSuspended && sceSystemServiceIsAppSuspended()) return true;
+    return false;
+}
+
 // Whether flip `needed` has been made. Its flipArg is its flip number.
 bool flip_made(int64_t needed) {
     OrbisVideoOutFlipStatus status{};
     if (sceVideoOutGetFlipStatus(g_video, &status) < 0) return true;  // (nothing to wait with)
-    g_last_arg = status.flipArg;
-    return status.flipArg >= needed;
+    const int64_t arg = status.flipArg;
+    g_last_arg = arg;
+    static std::atomic<int64_t> last_done{0};
+    const int64_t prev = last_done.exchange(arg);
+    // Only a flip VideoOut reports made ends a frame. Never call submitDone from present/submit:
+    // the kernel then expects an idle GPU within 500 ms while uploads are still running.
+    if (arg > prev && ac_ps4_flip_made)
+        ac_ps4_flip_made(arg);
+    return arg >= needed;
 }
 
 // The image about to be rendered into must be off screen: it is once a later flip than the one that showed it has
@@ -831,6 +873,20 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
                                                    VkSemaphore, VkFence fence, uint32_t* index) {
     auto sc = reinterpret_cast<Swapchain*>(swapchain);
     step("wsi: AcquireNextImageKHR (fence %d)", fence ? 1 : 0);
+    if (!sc->window && system_ui_overlaid()) {
+        static std::atomic<int64_t> last_log{0};
+        const int64_t now = now_ns();
+        if (now - last_log.load(std::memory_order_relaxed) > 5000000000ll) {
+            last_log.store(now, std::memory_order_relaxed);
+            log("ps4kit/wsi: system UI is overlaid; holding frames");
+        }
+        // Never return an error here. GE resets the frame fence before acquiring; an acquire
+        // failure leaves that fence unsignaled, and every later endScene then waits 2 s, skips the
+        // frame, and the app stays black until the system kills it. Wait for VideoOut to consume
+        // flips instead, and after 30 s proceed anyway (the endScene fence guard handles a stall).
+        for (int i = 0; i < 1500 && system_ui_overlaid(); i++)
+            sceKernelUsleep(20000);
+    }
     const uint32_t image = sc->next_image;
     // (a zero timeout asks not to block: the spec's VK_NOT_READY, the image stays next)
     if (!wait_off_screen(sc, image, timeout)) return VK_NOT_READY;
@@ -892,13 +948,42 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
             const int64_t arg = int64_t(g_flips.load() + 1);
             // the flip goes to the GPU behind the frame's commands: no CPU wait for the GPU or the vblank
             step("wsi: QueuePresentKHR image %u -> buffer %u, flip %lld", image, buffer, (long long)arg);
-            r = ac_ps4_submit_flip ? ac_ps4_submit_flip(g_video, buffer, mode, arg) : -1;
-            step("wsi: ac_ps4_submit_flip = %x", unsigned(r));
-            gpu_flip = r == 0;
-            if (!gpu_flip) {  // fallback: wait for the GPU on the CPU, then flip
-                device_fn<PFN_vkQueueWaitIdle>(sc->device, "vkQueueWaitIdle")(queue);
-                r = sceVideoOutSubmitFlip(g_video, int(buffer), mode, arg);
-                step("wsi: sceVideoOutSubmitFlip = %x", unsigned(r));
+            /* One frame in flight. A GPU-side flip is queued behind the frame's work, so VideoOut
+             * reports it made only after the CPU has submitted the next frame. The GPU is then
+             * never idle when the WSI calls sceGnmSubmitDone() from flip_made(): the kernel holds
+             * that call for its full 500 ms idle deadline. STK measured 1.9 flips/s with 612 ms/s
+             * of acquire waits and a device timeout every other frame. The same lag let the CPU
+             * recycle per-frame buffers and swapchain images the GPU was still reading, which is
+             * the screen full of unrelated textures. Wait for the GPU here and hand VideoOut a
+             * plain flip instead: the GPU is idle, submitDone is honest, and every image the app
+             * acquires has really been shown. */
+            r = -1;
+            gpu_flip = false;
+            {
+                /* Wait for the frame's GPU work, but only for a bounded time, and do not call
+                 * sceGnmSubmitDone here: it promises the kernel an idle GPU, and the kit's contract
+                 * is to call it once VideoOut reports a flip made (flip_made() does that on the
+                 * following acquire). Promising it before the flip made every present pay the
+                 * kernel's 500 ms deadline; at submission 632 the completion was never recorded and
+                 * the app froze. A missing completion must never wedge the app either: skip this
+                 * frame's flip and let the next one try again. */
+                VkFence pending = g_pending_fence.exchange(VK_NULL_HANDLE, std::memory_order_acq_rel);
+                bool ready = true;
+                if (pending)
+                    ready = device_fn<PFN_vkWaitForFences>(sc->device, "vkWaitForFences")(
+                                sc->device, 1, &pending, VK_TRUE, 200000000ull) == VK_SUCCESS;
+                if (ready) {
+                    r = sceVideoOutSubmitFlip(g_video, int(buffer), mode, arg);
+                    step("wsi: sceVideoOutSubmitFlip = %x", unsigned(r));
+                } else {
+                    static std::atomic<uint64_t> g_skipped{0};
+                    const uint64_t sk = ++g_skipped;
+                    if (sk <= 5 || sk % 600 == 0)
+                        step("wsi: frame fence not signalled after 200 ms, flip skipped (%llu)",
+                             (unsigned long long)sk);
+                    if (info->pResults) info->pResults[k] = VK_SUCCESS;
+                    continue;
+                }
             }
             if (r >= 0) {
                 sc->shown_by[image] = arg;
@@ -958,6 +1043,7 @@ bool is_timeline(VkSemaphore s) {
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t count, const VkSubmitInfo* submits, VkFence fence) {
     PFN_vkQueueSubmit real = g_queue_submit;
+    if (fence) g_pending_fence.store(fence, std::memory_order_release);
     // (most submits carry no semaphores at all: straight through, without copies)
     bool any = false;
     for (uint32_t k = 0; k < count && !any; k++)
@@ -1010,6 +1096,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t count, const 
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t count, const VkSubmitInfo2* submits,
                                             VkFence fence) {
     PFN_vkQueueSubmit2 real = g_queue_submit2;
+    if (fence) g_pending_fence.store(fence, std::memory_order_release);
     bool any = false;
     for (uint32_t k = 0; k < count && !any; k++)
         any = submits[k].waitSemaphoreInfoCount || submits[k].signalSemaphoreInfoCount;
@@ -1213,6 +1300,28 @@ void set_force_vsync(bool on) { g_force_vsync = on; }
 void shutdown_video() {
     std::lock_guard lk(g_lock);
     if (g_video < 0) return;
+    // Closing with a flip still queued is what made SceShellUI reboot when the game quit: the klog's
+    // last app lines were followed by "reboot ShellUI again". Let VideoOut show the last submitted
+    // flip, tell the kernel the GPU may idle, then hand every bank back before closing.
+    OrbisVideoOutFlipStatus last{};
+    for (int tries = 0; tries < 400; tries++) {
+        OrbisVideoOutFlipStatus status{};
+        if (sceVideoOutGetFlipStatus(g_video, &status) < 0) break;
+        last = status;
+        if (status.flipArg >= int64_t(g_flips.load())) break;
+        sceKernelUsleep(5000);
+    }
+    if (ac_ps4_flip_made && last.flipArg > 0) ac_ps4_flip_made(last.flipArg);
+    for (int bank = 0; bank < kBanks; bank++) {
+        if (!g_bank_used[bank]) continue;
+        for (int tries = 0; tries < 20; tries++) {
+            if (sceVideoOutUnregisterBuffers(g_video, bank * int(kMaxImages)) >= 0) {
+                g_bank_used[bank] = false;
+                break;
+            }
+            sceKernelUsleep(5000);
+        }
+    }
     for (Swapchain* sc : g_retired) {
         if (sc->buffer_set >= 0 && sceVideoOutUnregisterBuffers(g_video, sc->buffer_set) >= 0)
             sc->buffer_set = -1;

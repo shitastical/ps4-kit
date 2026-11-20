@@ -14,7 +14,7 @@ Tekken Tag 2, Etterna, Godot, Space Cadet Pinball) build with it; the older ones
 | `ps4-kit.cmake` | include from a project: `ps4_kit_app(target)`, `ps4_kit_link_mesa(target)` |
 | `toolchain/` | clang 21 + libc++ 21 toolchain file, `env.sh`, libc header overlay, sysroot/libc++ build scripts |
 | `runtime/` | heap (dlmalloc, blocking locks, per-thread arenas, overflow heaps), libc fixes, stdio lock, file layer (`*at`, cwd, path tidying), DNS, SMB/NFS under `/net`, crash log, sampler, profiler. API: `ps4_kit.h`, `ps4_kit_diag.h`, `ps4_kit_io.h` |
-| `gpu/` | `build-mesa.sh` + `mesa-patches/` (32 PS4 patches on Mesa 26.0.8), `ps4_vk_wsi.*` (Vulkan swapchain on VideoOut) |
+| `gpu/` | `build-mesa.sh` + `mesa-patches/` (35 PS4 patches on Mesa 26.0.8), `ps4_vk_wsi.*` (Vulkan swapchain on VideoOut) |
 | `scripts/` | `make-pkg.sh`, `upload.sh`, `seed-build-tree.sh`, crash log and profile tools |
 | `samples/kit-test/` | the kit on the console, measured; also the template for a new port |
 

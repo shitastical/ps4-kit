@@ -1,7 +1,7 @@
 From 0f924876382ce9fd51e94bde3cc7c7d33462f969 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <23220202+iHaiDeeZ@users.noreply.github.com>
 Date: Fri, 2 Oct 2026 21:39:23 +0300
-Subject: [PATCH 10/34] PS4: ac_ps4_get_stats prototype
+Subject: [PATCH 10/35] PS4: ac_ps4_get_stats prototype
 
 ---
  src/amd/common/ac_linux_drm.h |  1 +

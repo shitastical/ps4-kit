@@ -58,7 +58,8 @@ GPU subsystem faulted, fences never signalled, and the app sat in a wait that
 looked like a hang.
 
 The fix is in `gpu/mesa-patches` (`ac_ps4_drm.c`, `ps4_submit_thread`): call
-`submit_done()` only for a **flip** whose submission queue has **drained**. A
+`submit_done()` only for a **flip that VideoOut reports made**, never at submit time
+(see the 2026-11-20 update below for the guarded API). A
 loading screen never promises an idle GPU it cannot deliver; a presented frame
 does, once the uploads behind it are in.
 
@@ -115,3 +116,100 @@ button. If the app is unresponsive, wait for the shell's own close to complete.
 - `runtime/ps4_runtime.cpp`: `ps4_kit_exit`, the only exit path.
 - `docs/bring-up-and-iteration.md`: the earlier black-screen failures (init
   loops, SDL driver selection, pthread attributes).
+
+## The shell UI owns the display (STK port, 2026-11-19)
+
+Going home used to freeze the whole console: the shell stopped servicing the app's flips, the fence of the frame
+whose flip was waiting never signalled, `GEVulkanDriver::endScene()`'s 2 s timeout took its Windows recovery path,
+and that path calls `vkDeviceWaitIdle`, which has no timeout. The app wedged, and the shell's VideoOut handover
+wedged the console UI with it.
+
+Two changes, both needed:
+
+- `AcquireNextImageKHR` returns `VK_ERROR_OUT_OF_DATE_KHR` while the shell UI is in front (the two SystemService
+  status queries, weak, plus a VideoOut flip backlog fallback for firmware without them). The app draws nothing
+  and resumes on the first acquire after; no GPU work is queued behind a flip nobody services.
+- The PS4 branch of `endScene`'s fence-timeout path skips the frame instead of destroying the swapchain. Never
+  call `vkDeviceWaitIdle` or `destroySwapChainRelated()` from a timeout on PS4: the timeout is the display being
+  taken, not a device error, and waiting for the device there is what froze the console.
+
+Evidence: submit 567 never completed (CP/CPF busy, all shader units idle, no page fault), last WSI step was flip 67
+at 22.634 s, then 2 s timeouts and a permanent block in `vkDeviceWaitIdle`.
+
+## Update 2026-11-19: submitDone and acquire
+
+- `sceGnmSubmitDone` is called only through `ac_ps4_flip_made(flipArg)`, and only when
+  `sceVideoOutGetFlipStatus().flipArg` shows that a **newer** flip has been made. The
+  submission thread never calls it. Calling it at submit time promises the kernel that
+  the GPU can go idle while the frame and its texture uploads are still running; the
+  kernel then faults with `GPU_FAULT_SUBMITDONE_TIMEOUT_IN_SUSPEND_ASYNC` after 500 ms.
+  `ac_ps4_submit_done()` still exists for old ports but is inert (it logs once), so the
+  old call can no longer start a deadline it cannot meet.
+- `vkAcquireNextImageKHR` must never return `VK_ERROR_OUT_OF_DATE_KHR` while the shell UI
+  is overlaid. GE resets the frame fence before acquiring, so an acquire error leaves
+  that fence unsignaled and every later `endScene()` waits its 2 s timeout and skips the
+  frame, leaving the app black. Wait for VideoOut to consume flips instead, with a
+  bounded cap (30 s) so a wedged VideoOut still lets the frame loop proceed.
+- If an acquire does fail, `GEVulkanDriver::endScene()` must re-signal the already-reset
+  frame fence with an empty `vkQueueSubmit`; otherwise the frame loop is permanently
+  bricked.
+
+## Update 2026-11-20: the 500 ms trap in present, and the guarded API
+
+This is the failure that made SuperTuxKart's menus run at 1 fps and froze the tutorial.
+Both symptoms had one cause, and it was in the kit's CPU present path.
+
+### Evidence
+
+- The WSI stats line was `1.0 flips/s, longest frame 1029 ms, acquire waits 0 ms/s,
+  0 timeouts, flipArg 84 of 86 submitted`. `vkAcquireNextImageKHR` and
+  `sceVideoOutSubmitFlip` each took ~512 ms: the kernel's 500 ms `submitDone` deadline,
+  not render cost.
+- Loading the tutorial stopped with `gpu-hang.txt` saying `waiting for 632, GPU completed
+  631, submitted 632`; every GPU unit was Idle. The klog showed a system coredump,
+  `reason=0xa0d0c007`, `KillApp(STKR00001)`, and SceShellUI rebooting. It was not an STK
+  segfault.
+- The old `crash.log` was stale: the same signal/fault/thread signature appeared across
+  runs. The klog, not `crash.log`, named the kill.
+
+### Cause
+
+Present called `ac_ps4_submit_done()` **before** `sceVideoOutSubmitFlip`. Every present
+promised the kernel an idle GPU while the frame and its uploads were still queued, so
+every frame waited out the 500 ms deadline. During loading, enough of those timeouts
+stopped submission completion entirely. Present then waited the frame fence with **no
+timeout**, so the app froze behind a fence that could no longer signal.
+
+### Fix (kit, not port)
+
+- Present no longer calls `submitDone` at all. When the WSI next reads
+  `sceVideoOutGetFlipStatus` and `flipArg` has advanced, it calls
+  `ac_ps4_flip_made(flipArg)` — once for that flip.
+- The frame-fence wait in present is capped at **200 ms**. On timeout the WSI logs
+  `frame fence not signalled after 200 ms, flip skipped` and returns without a flip, so
+  the app keeps running.
+- No `vkDeviceWaitIdle` and no device/queue wait without a timeout in the frame path.
+- `shutdown_video` uses the last observed `flipArg` for its final `flip_made` call, then
+  unregisters the banks and closes VideoOut.
+
+### The API now enforces the rule
+
+`ac_ps4_drm.c` keeps a monotonic `ps4_last_flip_made`. `ac_ps4_flip_made(int64_t)`
+accepts only a strictly newer `flipArg` (compare-and-swap); a repeated or stale number
+returns without calling `sceGnmSubmitDone`. `ac_ps4_submit_done(void)` remains as a
+link-compatible, deliberately **inert** symbol that warns once. A port can therefore
+still link, but it cannot promise an idle GPU without naming a flip that VideoOut made.
+
+### Present recipe for any port
+
+1. Submit the frame's work and keep its fence.
+2. Wait that fence with a bound. If it is not signalled, **do not flip** and do not
+   `submitDone`; the frame is late, not the device.
+3. Submit the VideoOut flip.
+4. On the next acquire/present, read `flipArg`; when it advances, call
+   `ac_ps4_flip_made(flipArg)` once.
+5. On exit, wait the last flip (bounded), `flip_made(lastArg)`, unregister every bank,
+   close VideoOut.
+
+Never: `submitDone` at submit time or on a timer; an unbounded fence/flip wait;
+`vkDeviceWaitIdle` in a timeout path; closing VideoOut with flips still queued.

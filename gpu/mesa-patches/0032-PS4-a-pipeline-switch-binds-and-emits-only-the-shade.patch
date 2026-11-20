@@ -1,7 +1,7 @@
 From c52031b7db24242d65f66843d32cb1fc939e9eb3 Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Mon, 16 Nov 2026 23:56:36 +0300
-Subject: [PATCH 32/34] PS4: a pipeline switch binds and emits only the shader
+Subject: [PATCH 32/35] PS4: a pipeline switch binds and emits only the shader
  stages that change (per switch on the PC host build: same shaders 0.115 ->
  0.068 us, other fragment shader 0.155 -> 0.120 us)
 

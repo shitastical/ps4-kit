@@ -102,3 +102,14 @@ Caveats for whoever decides the kit's license:
   acquire timeouts (`N timeouts` in the stats line) and the winsys log.
 - Compile check: the given command fails with the libc-overlay headers ahead of libc++'s; it compiles (no warnings with
   `-Wall -Wextra`) with `$PS4_CXX_FLAGS` placed **before** `$PS4_BASE_FLAGS`.
+
+## 2026-11-20: submitDone moved behind flip_made
+
+Present no longer references `ac_ps4_submit_done` at all. The last CPU-present path called it before
+`sceVideoOutSubmitFlip`, which made every frame wait out the kernel's 500 ms submitDone deadline
+(1 fps) and eventually stopped submission completion during texture loading (system coredump, shell
+reboot). The WSI now calls `ac_ps4_flip_made(flipArg)` only when `sceVideoOutGetFlipStatus` reports a
+newer flip, and `shutdown_video` passes the last observed `flipArg` after its bounded wait. Present
+caps the frame-fence wait at 200 ms and skips the flip on timeout instead of waiting forever. The
+Mesa side keeps a monotonic flip number and ignores repeats; the old `ac_ps4_submit_done` symbol is
+inert. Details and the port checklist: `docs/gpu-submit-and-videout.md`.

@@ -1,7 +1,7 @@
 From 878019994b1a952c656240e452fba9d2aab898fb Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Fri, 30 Oct 2026 23:39:55 +0300
-Subject: [PATCH 29/34] PS4: wait-only submissions (no command buffers) wait
+Subject: [PATCH 29/35] PS4: wait-only submissions (no command buffers) wait
  for their points to be submitted instead of exporting sync files (ENOSYS:
  lost the device)
 

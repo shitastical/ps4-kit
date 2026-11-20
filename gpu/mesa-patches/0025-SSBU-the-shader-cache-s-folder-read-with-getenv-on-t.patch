@@ -1,7 +1,7 @@
 From 9db0ca90cfa705a8285d2267d51a04db85966299 Mon Sep 17 00:00:00 2001
 From: ShiroKlein <ihaideezi@gmail.com>
 Date: Wed, 21 Oct 2026 18:28:14 +0300
-Subject: [PATCH 25/34] SSBU: the shader cache's folder read with getenv on the
+Subject: [PATCH 25/35] SSBU: the shader cache's folder read with getenv on the
  PS4 (OpenOrbis's secure_getenv returns nothing), its files used without flock
  where the file system has none, its start in the log
 

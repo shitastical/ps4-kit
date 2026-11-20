@@ -1,7 +1,7 @@
 From 92720089aae1a312b65e199ae226d1d2e4fcab01 Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Sun, 25 Oct 2026 01:58:28 +0300
-Subject: [PATCH 27/34] PS4: big-endian index types (VGT_DMA_INDEX_TYPE
+Subject: [PATCH 27/35] PS4: big-endian index types (VGT_DMA_INDEX_TYPE
  SWAP_MODE): the GPU byte-swaps indices as it fetches them (from Crema)
 
 ---

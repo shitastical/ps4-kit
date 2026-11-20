@@ -1,7 +1,7 @@
 From 7eab6c549763ce53efa043687cce06aa8f99ee4e Mon Sep 17 00:00:00 2001
 From: ps4-kit <ps4-kit@localhost>
 Date: Fri, 6 Nov 2026 02:15:26 +0300
-Subject: [PATCH 30/34] PS4: placed memory maps (VK_EXT_map_memory_placed): the
+Subject: [PATCH 30/35] PS4: placed memory maps (VK_EXT_map_memory_placed): the
  buffer's direct memory mapped once more at the application's address,
  reserved again on unmap and on destroy (Wine's 32-bit processes: DXVK failed
  to map its memory, VK_ERROR_MEMORY_MAP_FAILED)
